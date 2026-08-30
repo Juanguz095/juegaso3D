@@ -8,6 +8,6 @@ extends Node3D
 func _ready() -> void:
 	if hud and jugador:
 		hud.conectar_jugador(jugador)
-	
+
 	if npc_kenjo and hud:
 		npc_kenjo.conversacion_iniciada.connect(hud.mostrar_dialogo)

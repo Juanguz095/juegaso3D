@@ -6,6 +6,8 @@ signal municion_actualizada(municion: int, municion_max: int)
 signal prompt_interaccion_cambiado(texto: String)
 signal dialogo_iniciado(hablante: String, lineas: Array[String])
 signal estado_agachado_cambiado(agachado: bool)
+signal dano_por_caida(cantidad: float)
+signal stamina_cambiada(actual: float, maxima: float)
 
 @export var velocidad_caminar: float = 5.0
 @export var velocidad_correr: float = 8.0
@@ -21,6 +23,20 @@ signal estado_agachado_cambiado(agachado: bool)
 @export var distancia_trepar: float = 1.5
 @export var altura_max_trepar: float = 2.5
 @export var velocidad_trepar: float = 3.0
+@export_group("Lean (Asomarse)")
+@export var angulo_lean: float = 6.0
+@export var velocidad_lean: float = 8.0
+@export_group("Slide")
+@export var velocidad_slide: float = 12.0
+@export var duracion_slide: float = 0.5
+@export var cooldown_slide: float = 1.0
+@export_group("Daño por caída")
+@export var altura_min_caida: float = 3.0
+@export var factor_dano_caida: float = 10.0
+@export_group("Stamina")
+@export var stamina_maxima: float = 100.0
+@export var velocidad_drenaje_stamina: float = 20.0
+@export var velocidad_regeneracion_stamina: float = 15.0
 
 @onready var pivote_camara: Node3D = $PivoteCamara
 @onready var camara: Camera3D = $PivoteCamara/Camara3D
@@ -45,12 +61,28 @@ var altura_objetivo: float = 1.8
 var esta_trepando: bool = false
 var objetivo_trepar: Vector3 = Vector3.ZERO
 
+var lean_objetivo: float = 0.0
+var lean_actual: float = 0.0
+var posicion_original_camara: Vector3
+
+var en_slide: bool = false
+var tiempo_slide: float = 0.0
+var tiempo_ultimo_slide: float = -10.0
+var direccion_slide: Vector3 = Vector3.ZERO
+
+var en_aire: bool = false
+var altura_despegue: float = 0.0
+var stamina_actual: float = 100.0
+var stamina_agotada: bool = false
+
 func _ready() -> void:
 	_asegurar_mapeo_entradas()
 	capturar_raton(true)
 	_inicializar_armas()
 	_actualizar_datos_arma_ui()
 	componente_salud.murio.connect(_al_morir)
+	posicion_original_camara = pivote_camara.position
+	stamina_actual = stamina_maxima
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and raton_capturado and not en_dialogo:
@@ -81,9 +113,24 @@ func _input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	_procesar_agacharse(delta)
 	_procesar_trepar(delta)
+	_procesar_slide(delta)
+	_procesar_dano_caida()
+	_procesar_lean(delta)
+	_procesar_stamina(delta)
 
 	if not esta_trepando and not is_on_floor():
 		velocity.y -= gravedad * delta
+		if not en_aire:
+			en_aire = true
+			altura_despegue = global_position.y
+	else:
+		if en_aire:
+			var caida: float = altura_despegue - global_position.y
+			if caida > altura_min_caida:
+				var dano: float = (caida - altura_min_caida) * factor_dano_caida
+				componente_salud.recibir_dano(dano)
+				dano_por_caida.emit(dano)
+			en_aire = false
 
 	if en_dialogo:
 		velocity.x = move_toward(velocity.x, 0.0, velocidad_caminar)
@@ -102,7 +149,10 @@ func _physics_process(delta: float) -> void:
 	var input_dir: Vector2 = Input.get_vector("mover_izquierda", "mover_derecha", "mover_adelante", "mover_atras")
 	var direccion: Vector3 = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
-	if direccion != Vector3.ZERO:
+	if en_slide:
+		velocity.x = direccion_slide.x * velocidad_slide
+		velocity.z = direccion_slide.z * velocidad_slide
+	elif direccion != Vector3.ZERO:
 		velocity.x = direccion.x * velocidad_actual
 		velocity.z = direccion.z * velocidad_actual
 	else:
@@ -163,10 +213,8 @@ func disparar() -> void:
 	arma.municion_actual -= 1
 	municion_actualizada.emit(arma.municion_actual, arma.municion_maxima)
 
-	# Retroceso visual sutil
 	pivote_camara.rotation.x += deg_to_rad(1.0)
 
-	# Raycast de impacto
 	rayo_disparo.target_position = Vector3(0, 0, -arma.alcance)
 	rayo_disparo.force_raycast_update()
 
@@ -247,7 +295,7 @@ func _procesar_agacharse(delta: float) -> void:
 func _obtener_velocidad_actual() -> float:
 	if esta_agachado:
 		return velocidad_agachado
-	if Input.is_action_pressed("correr"):
+	if Input.is_action_pressed("correr") and not stamina_agotada and stamina_actual > 0.0:
 		return velocidad_correr
 	return velocidad_caminar
 
@@ -297,6 +345,71 @@ func _finalizar_trepar() -> void:
 	global_position = objetivo_trepar
 	velocity = Vector3.ZERO
 
+func _procesar_lean(delta: float) -> void:
+	if en_slide or esta_trepando:
+		lean_objetivo = 0.0
+	else:
+		if Input.is_action_pressed("lean_izquierda"):
+			lean_objetivo = angulo_lean
+		elif Input.is_action_pressed("lean_derecha"):
+			lean_objetivo = -angulo_lean
+		else:
+			lean_objetivo = 0.0
+
+	lean_actual = lerpf(lean_actual, lean_objetivo, delta * velocidad_lean)
+	pivote_camara.rotation.z = deg_to_rad(lean_actual)
+	pivote_camara.position.x = posicion_original_camara.x - lean_actual * 0.15
+
+func _procesar_slide(delta: float) -> void:
+	if en_slide:
+		tiempo_slide -= delta
+		if tiempo_slide <= 0.0:
+			_en_finalizar_slide()
+		return
+
+	if Input.is_action_just_pressed("agacharse") and Input.is_action_pressed("correr") and is_on_floor():
+		_iniciar_slide()
+
+func _iniciar_slide() -> void:
+	var tiempo_actual: float = Time.get_ticks_msec() / 1000.0
+	if tiempo_actual - tiempo_ultimo_slide < cooldown_slide:
+		return
+
+	var input_dir: Vector2 = Input.get_vector("mover_izquierda", "mover_derecha", "mover_adelante", "mover_atras")
+	if input_dir == Vector2.ZERO:
+		return
+
+	en_slide = true
+	tiempo_slide = duracion_slide
+	tiempo_ultimo_slide = tiempo_actual
+	direccion_slide = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	esta_agachado = true
+	estado_agachado_cambiado.emit(true)
+
+func _en_finalizar_slide() -> void:
+	en_slide = false
+	esta_agachado = false
+	estado_agachado_cambiado.emit(false)
+
+func _procesar_dano_caida() -> void:
+	pass
+
+func _procesar_stamina(delta: float) -> void:
+	var input_dir: Vector2 = Input.get_vector("mover_izquierda", "mover_derecha", "mover_adelante", "mover_atras")
+	var moviendose: bool = input_dir != Vector2.ZERO and is_on_floor()
+	var corriendo: bool = Input.is_action_pressed("correr") and not esta_agachado and not stamina_agotada and stamina_actual > 0.0
+
+	if corriendo and moviendose and not esta_agachado:
+		stamina_actual = maxf(stamina_actual - velocidad_drenaje_stamina * delta, 0.0)
+		if stamina_actual <= 0.0:
+			stamina_agotada = true
+	else:
+		stamina_actual = minf(stamina_actual + velocidad_regeneracion_stamina * delta, stamina_maxima)
+		if stamina_agotada and stamina_actual >= stamina_maxima * 0.5:
+			stamina_agotada = false
+
+	stamina_cambiada.emit(stamina_actual, stamina_maxima)
+
 func _asegurar_mapeo_entradas() -> void:
 	_agregar_tecla("mover_adelante", KEY_W)
 	_agregar_tecla("mover_atras", KEY_S)
@@ -304,12 +417,14 @@ func _asegurar_mapeo_entradas() -> void:
 	_agregar_tecla("mover_derecha", KEY_D)
 	_agregar_tecla("saltar", KEY_SPACE)
 	_agregar_tecla("correr", KEY_SHIFT)
-	_agregar_tecla("interactuar", KEY_E)
+	_agregar_tecla("interactuar", KEY_F)
 	_agregar_tecla("recargar", KEY_R)
 	_agregar_tecla("arma_1", KEY_1)
 	_agregar_tecla("arma_2", KEY_2)
 	_agregar_tecla("agacharse", KEY_CTRL)
-	_agregar_tecla("trepar", KEY_F)
+	_agregar_tecla("trepar", KEY_G)
+	_agregar_tecla("lean_izquierda", KEY_Q)
+	_agregar_tecla("lean_derecha", KEY_E)
 	_agregar_raton("disparar", MOUSE_BUTTON_LEFT)
 
 func _agregar_tecla(accion: StringName, tecla: Key) -> void:
