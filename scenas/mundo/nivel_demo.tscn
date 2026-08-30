@@ -1,10 +1,11 @@
-[gd_scene load_steps=18 format=3 uid="uid://3y2y6cnn0wp6"]
+[gd_scene load_steps=19 format=3 uid="uid://3y2y6cnn0wp6"]
 
 [ext_resource type="Script" uid="uid://c57t3x0imqdc6" path="res://scripts/mundo/nivel_demo.gd" id="1_nivel"]
 [ext_resource type="PackedScene" path="res://scenas/entidades/jugador.tscn" id="2_jugador"]
 [ext_resource type="PackedScene" path="res://scenas/entidades/enemigo.tscn" id="3_enemigo"]
 [ext_resource type="PackedScene" path="res://scenas/entidades/npc.tscn" id="4_npc"]
 [ext_resource type="PackedScene" path="res://scenas/interfaz/hud.tscn" id="5_hud"]
+[ext_resource type="Script" uid="uid://g0s65cmprdf6" path="res://scripts/componentes/superficie_trepable.gd" id="6_trepable"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 sky_top_color = Color(0.35, 0.55, 0.85, 1)
@@ -83,6 +84,11 @@ mesh = SubResource("BoxMesh_muro")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Escenario/MuroNorte"]
 shape = SubResource("BoxShape3D_muro")
+
+[node name="SuperficieTrepable" type="Node3D" parent="Escenario/MuroNorte"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.6)
+script = ExtResource("6_trepable")
+altura_destino = 4.0
 
 [node name="MuroSur" type="StaticBody3D" parent="Escenario"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 30)
