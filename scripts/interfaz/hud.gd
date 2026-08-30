@@ -10,6 +10,7 @@ extends CanvasLayer
 @onready var etiqueta_hablante: Label = $ContenedorHUD/Margen/Contenido/PanelDialogo/Margen/VBox/EtiquetaHablante
 @onready var etiqueta_texto_dialogo: Label = $ContenedorHUD/Margen/Contenido/PanelDialogo/Margen/VBox/EtiquetaTexto
 @onready var boton_continuar: Button = $ContenedorHUD/Margen/Contenido/PanelDialogo/Margen/VBox/BotonContinuar
+@onready var barra_stamina: ProgressBar = $ContenedorHUD/Margen/Contenido/Inferior/SaludContainer/BarraStamina
 
 var lineas_actuales: Array[String] = []
 var indice_linea: int = 0
@@ -33,6 +34,8 @@ func conectar_jugador(jugador: CharacterBody3D) -> void:
 		jugador.municion_actualizada.connect(actualizar_municion)
 	if jugador.has_signal("prompt_interaccion_cambiado"):
 		jugador.prompt_interaccion_cambiado.connect(actualizar_prompt)
+	if jugador.has_signal("stamina_cambiada"):
+		jugador.stamina_cambiada.connect(actualizar_stamina)
 
 func _input(event: InputEvent) -> void:
 	if panel_dialogo.visible and (event.is_action_pressed("interactuar") or event.is_action_pressed("ui_accept")):
@@ -82,3 +85,7 @@ func cerrar_dialogo() -> void:
 	panel_dialogo.visible = false
 	if jugador_ref and jugador_ref.has_method("establecer_en_dialogo"):
 		jugador_ref.establecer_en_dialogo(false)
+
+func actualizar_stamina(actual: float, maxima: float) -> void:
+	barra_stamina.max_value = maxima
+	barra_stamina.value = actual
