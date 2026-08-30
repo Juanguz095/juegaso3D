@@ -5,12 +5,22 @@ signal arma_cambiada(nombre_arma: String, municion: int, municion_max: int)
 signal municion_actualizada(municion: int, municion_max: int)
 signal prompt_interaccion_cambiado(texto: String)
 signal dialogo_iniciado(hablante: String, lineas: Array[String])
+signal estado_agachado_cambiado(agachado: bool)
 
 @export var velocidad_caminar: float = 5.0
 @export var velocidad_correr: float = 8.0
+@export var velocidad_agachado: float = 2.5
 @export var fuerza_salto: float = 4.5
 @export var sensibilidad_raton: float = 0.002
 @export var armas: Array[DatosArma] = []
+@export_group("Agacharse")
+@export var altura_de_pie: float = 1.8
+@export var altura_agachado: float = 1.0
+@export var velocidad_transicion_crouch: float = 8.0
+@export_group("Trepar")
+@export var distancia_trepar: float = 1.5
+@export var altura_max_trepar: float = 2.5
+@export var velocidad_trepar: float = 3.0
 
 @onready var pivote_camara: Node3D = $PivoteCamara
 @onready var camara: Camera3D = $PivoteCamara/Camara3D
@@ -18,6 +28,9 @@ signal dialogo_iniciado(hablante: String, lineas: Array[String])
 @onready var rayo_disparo: RayCast3D = $PivoteCamara/Camara3D/RayoDisparo
 @onready var malla_arma: MeshInstance3D = $PivoteCamara/Camara3D/MallaArma
 @onready var componente_salud: ComponenteSalud = $ComponenteSalud
+@onready var collision_shape: CollisionShape3D = $CollisionShape3D
+@onready var malla_cuerpo: MeshInstance3D = $MallaCuerpo
+@onready var rayo_trepar: RayCast3D = $RayoTrepar
 
 var gravedad: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var indice_arma_actual: int = 0
@@ -27,6 +40,10 @@ var interactuable_actual: Interactuable = null
 var en_dialogo: bool = false
 var tiempo_fin_dialogo: float = 0.0
 var raton_capturado: bool = true
+var esta_agachado: bool = false
+var altura_objetivo: float = 1.8
+var esta_trepando: bool = false
+var objetivo_trepar: Vector3 = Vector3.ZERO
 
 func _ready() -> void:
 	_asegurar_mapeo_entradas()
@@ -62,7 +79,10 @@ func _input(event: InputEvent) -> void:
 		recargar()
 
 func _physics_process(delta: float) -> void:
-	if not is_on_floor():
+	_procesar_agacharse(delta)
+	_procesar_trepar(delta)
+
+	if not esta_trepando and not is_on_floor():
 		velocity.y -= gravedad * delta
 
 	if en_dialogo:
@@ -71,10 +91,14 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
-	if is_on_floor() and Input.is_action_just_pressed("saltar"):
+	if esta_trepando:
+		move_and_slide()
+		return
+
+	if is_on_floor() and Input.is_action_just_pressed("saltar") and not esta_agachado:
 		velocity.y = fuerza_salto
 
-	var velocidad_actual: float = velocidad_correr if Input.is_action_pressed("correr") else velocidad_caminar
+	var velocidad_actual: float = _obtener_velocidad_actual()
 	var input_dir: Vector2 = Input.get_vector("mover_izquierda", "mover_derecha", "mover_adelante", "mover_atras")
 	var direccion: Vector3 = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
@@ -203,6 +227,76 @@ func establecer_en_dialogo(valor: bool) -> void:
 func _al_morir() -> void:
 	print("El jugador ha caído.")
 
+func _procesar_agacharse(delta: float) -> void:
+	if Input.is_action_just_pressed("agacharse") and is_on_floor():
+		esta_agachado = not esta_agachado
+		estado_agachado_cambiado.emit(esta_agachado)
+
+	altura_objetivo = altura_agachado if esta_agachado else altura_de_pie
+	var altura_actual: float = collision_shape.shape.height
+	var nueva_altura: float = move_toward(altura_actual, altura_objetivo, velocidad_transicion_crouch * delta)
+
+	if abs(nueva_altura - altura_actual) > 0.01:
+		collision_shape.shape.height = nueva_altura
+		malla_cuerpo.mesh.height = nueva_altura
+		var offset_y: float = nueva_altura / 2.0
+		collision_shape.position.y = offset_y
+		malla_cuerpo.position.y = offset_y
+		pivote_camara.position.y = lerpf(pivote_camara.position.y, nueva_altura - 0.3, delta * velocidad_transicion_crouch)
+
+func _obtener_velocidad_actual() -> float:
+	if esta_agachado:
+		return velocidad_agachado
+	if Input.is_action_pressed("correr"):
+		return velocidad_correr
+	return velocidad_caminar
+
+func _procesar_trepar(_delta: float) -> void:
+	if esta_trepando:
+		var direccion_trepar: Vector3 = (objetivo_trepar - global_position).normalized()
+		velocity = direccion_trepar * velocidad_trepar
+
+		if global_position.distance_to(objetivo_trepar) < 0.3:
+			_finalizar_trepar()
+		return
+
+	if Input.is_action_just_pressed("trepar") and not is_on_floor():
+		var resultado: Dictionary = _detectar_superficie_trepar()
+		if resultado:
+			iniciar_trepar(resultado.position)
+
+func _detectar_superficie_trepar() -> Dictionary:
+	rayo_trepar.force_raycast_update()
+
+	if rayo_trepar.is_colliding():
+		var colision: Node3D = rayo_trepar.get_collider() as Node3D
+		if colision:
+			var superficie: SuperficieTrepable = _buscar_superficie_trepable(colision)
+			if not superficie and colision.get_parent():
+				superficie = _buscar_superficie_trepable(colision.get_parent() as Node3D)
+			if superficie and superficie.activo:
+				return {"position": superficie.global_position + Vector3(0, superficie.altura_destino, 0)}
+
+	return {}
+
+func _buscar_superficie_trepable(nodo: Node3D) -> SuperficieTrepable:
+	if nodo is SuperficieTrepable:
+		return nodo as SuperficieTrepable
+	for hijo in nodo.get_children():
+		if hijo is SuperficieTrepable:
+			return hijo as SuperficieTrepable
+	return null
+
+func iniciar_trepar(posicion: Vector3) -> void:
+	esta_trepando = true
+	objetivo_trepar = posicion
+	velocity = Vector3.ZERO
+
+func _finalizar_trepar() -> void:
+	esta_trepando = false
+	global_position = objetivo_trepar
+	velocity = Vector3.ZERO
+
 func _asegurar_mapeo_entradas() -> void:
 	_agregar_tecla("mover_adelante", KEY_W)
 	_agregar_tecla("mover_atras", KEY_S)
@@ -214,6 +308,8 @@ func _asegurar_mapeo_entradas() -> void:
 	_agregar_tecla("recargar", KEY_R)
 	_agregar_tecla("arma_1", KEY_1)
 	_agregar_tecla("arma_2", KEY_2)
+	_agregar_tecla("agacharse", KEY_CTRL)
+	_agregar_tecla("trepar", KEY_F)
 	_agregar_raton("disparar", MOUSE_BUTTON_LEFT)
 
 func _agregar_tecla(accion: StringName, tecla: Key) -> void:

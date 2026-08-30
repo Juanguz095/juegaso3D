@@ -56,3 +56,8 @@ collide_with_bodies = true
 [node name="MallaArma" type="MeshInstance3D" parent="PivoteCamara/Camara3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28, -0.22, -0.45)
 mesh = SubResource("BoxMesh_arma")
+
+[node name="RayoTrepar" type="RayCast3D" parent="."]
+target_position = Vector3(0, 0.5, -2)
+collide_with_areas = true
+collide_with_bodies = true
