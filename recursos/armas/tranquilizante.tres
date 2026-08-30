@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="DatosArma" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/armas/datos_arma.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+nombre = "Dardo Tranquilizante"
+dano = 10.0
+cadencia = 0.8
+municion_maxima = 6
+municion_actual = 6
+alcance = 40.0
+es_no_letal = true
+color_arma = Color(0.1, 0.5, 0.6, 1)

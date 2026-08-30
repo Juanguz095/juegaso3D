@@ -1,0 +1,58 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/entidades/jugador.gd" id="1_jugador"]
+[ext_resource type="Script" path="res://scripts/componentes/componente_salud.gd" id="2_salud"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cuerpo"]
+albedo_color = Color(0.2, 0.4, 0.8, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
+material = SubResource("StandardMaterial3D_cuerpo")
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_arma"]
+albedo_color = Color(0.15, 0.15, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_arma"]
+material = SubResource("StandardMaterial3D_arma")
+size = Vector3(0.1, 0.12, 0.4)
+
+[node name="Jugador" type="CharacterBody3D" groups=["jugador"]]
+script = ExtResource("1_jugador")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="MallaCuerpo" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("CapsuleMesh_1")
+
+[node name="ComponenteSalud" type="Node" parent="."]
+script = ExtResource("2_salud")
+salud_maxima = 100.0
+
+[node name="PivoteCamara" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+
+[node name="Camara3D" type="Camera3D" parent="PivoteCamara"]
+current = true
+
+[node name="RayoInteraccion" type="RayCast3D" parent="PivoteCamara/Camara3D"]
+target_position = Vector3(0, 0, -3)
+collide_with_areas = true
+collide_with_bodies = true
+
+[node name="RayoDisparo" type="RayCast3D" parent="PivoteCamara/Camara3D"]
+target_position = Vector3(0, 0, -60)
+collide_with_areas = true
+collide_with_bodies = true
+
+[node name="MallaArma" type="MeshInstance3D" parent="PivoteCamara/Camara3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28, -0.22, -0.45)
+mesh = SubResource("BoxMesh_arma")

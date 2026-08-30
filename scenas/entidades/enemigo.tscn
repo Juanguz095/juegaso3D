@@ -1,0 +1,38 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/entidades/enemigo.gd" id="1_enemigo"]
+[ext_resource type="Script" path="res://scripts/componentes/componente_salud.gd" id="2_salud"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_enemigo"]
+albedo_color = Color(0.85, 0.2, 0.2, 1)
+roughness = 0.5
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_1"]
+radius = 0.4
+height = 1.8
+
+[node name="Enemigo" type="CharacterBody3D" groups=["enemigo"]]
+script = ExtResource("1_enemigo")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="Malla" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+material_override = SubResource("StandardMaterial3D_enemigo")
+mesh = SubResource("CapsuleMesh_1")
+
+[node name="ComponenteSalud" type="Node" parent="."]
+script = ExtResource("2_salud")
+salud_maxima = 70.0
+
+[node name="EtiquetaEstado" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.1, 0)
+billboard = 1
+font_size = 36
+outline_size = 8

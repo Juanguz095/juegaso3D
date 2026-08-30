@@ -1,0 +1,162 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/interfaz/hud.gd" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="ContenedorHUD" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Centro" type="CenterContainer" parent="ContenedorHUD"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PuntoMira" type="ColorRect" parent="ContenedorHUD/Centro"]
+custom_minimum_size = Vector2(4, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0.8)
+
+[node name="EtiquetaPrompt" type="Label" parent="ContenedorHUD/Centro"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="Margen" type="MarginContainer" parent="ContenedorHUD"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Contenido" type="VBoxContainer" parent="ContenedorHUD/Margen"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Superior" type="HBoxContainer" parent="ContenedorHUD/Margen/Contenido"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Titulo" type="Label" parent="ContenedorHUD/Margen/Contenido/Superior"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 16
+text = "OPERACIÓN BOLÍVAR — Demo Técnica"
+
+[node name="Espacio" type="Control" parent="ContenedorHUD/Margen/Contenido"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="PanelDialogo" type="PanelContainer" parent="ContenedorHUD/Margen/Contenido"]
+visible = false
+custom_minimum_size = Vector2(600, 140)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="Margen" type="MarginContainer" parent="ContenedorHUD/Margen/Contenido/PanelDialogo"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="ContenedorHUD/Margen/Contenido/PanelDialogo/Margen"]
+layout_mode = 2
+
+[node name="EtiquetaHablante" type="Label" parent="ContenedorHUD/Margen/Contenido/PanelDialogo/Margen/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.8, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "Hablante"
+
+[node name="EtiquetaTexto" type="Label" parent="ContenedorHUD/Margen/Contenido/PanelDialogo/Margen/VBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 15
+text = "Texto del diálogo..."
+autowrap_mode = 2
+
+[node name="BotonContinuar" type="Button" parent="ContenedorHUD/Margen/Contenido/PanelDialogo/Margen/VBox"]
+layout_mode = 2
+size_flags_horizontal = 8
+text = "[E] Siguiente"
+
+[node name="Inferior" type="HBoxContainer" parent="ContenedorHUD/Margen/Contenido"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SaludContainer" type="VBoxContainer" parent="ContenedorHUD/Margen/Contenido/Inferior"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="EtiquetaSalud" type="Label" parent="ContenedorHUD/Margen/Contenido/Inferior/SaludContainer"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 14
+text = "SALUD: 100 / 100"
+
+[node name="BarraSalud" type="ProgressBar" parent="ContenedorHUD/Margen/Contenido/Inferior/SaludContainer"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+value = 100.0
+show_percentage = false
+
+[node name="Espacio" type="Control" parent="ContenedorHUD/Margen/Contenido/Inferior"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="ArmaContainer" type="VBoxContainer" parent="ContenedorHUD/Margen/Contenido/Inferior"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+mouse_filter = 2
+alignment = 2
+
+[node name="EtiquetaArma" type="Label" parent="ContenedorHUD/Margen/Contenido/Inferior/ArmaContainer"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 16
+text = "PISTOLA POLICIAL"
+horizontal_alignment = 2
+
+[node name="EtiquetaMunicion" type="Label" parent="ContenedorHUD/Margen/Contenido/Inferior/ArmaContainer"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 22
+text = "12 / 12"
+horizontal_alignment = 2
+
+[node name="Controles" type="Label" parent="ContenedorHUD/Margen/Contenido/Inferior/ArmaContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "[1] Pistola  [2] Tranquilizante  [R] Recargar"
+horizontal_alignment = 2

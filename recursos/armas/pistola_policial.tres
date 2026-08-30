@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="DatosArma" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/armas/datos_arma.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+nombre = "Pistola Policial"
+dano = 35.0
+cadencia = 0.3
+municion_maxima = 12
+municion_actual = 12
+alcance = 60.0
+es_no_letal = false
+color_arma = Color(0.15, 0.15, 0.2, 1)
