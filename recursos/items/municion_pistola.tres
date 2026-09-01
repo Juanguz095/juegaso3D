@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DatosItem" format=3]
+
+[ext_resource type="Script" path="res://scripts/inventario/datos_item.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+nombre = "Munición de Pistola"
+descripcion = "Recarga 12 balas para la pistola policial"
+tipo = 1
+apilable = true
+cantidad_maxima = 50
+usable = true
+equipable = false

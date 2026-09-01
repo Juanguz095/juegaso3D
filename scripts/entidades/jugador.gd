@@ -8,6 +8,7 @@ signal dialogo_iniciado(hablante: String, lineas: Array[String])
 signal estado_agachado_cambiado(agachado: bool)
 signal dano_por_caida(cantidad: float)
 signal stamina_cambiada(actual: float, maxima: float)
+signal inventario_abierto(abierto: bool)
 
 @export var velocidad_caminar: float = 5.0
 @export var velocidad_correr: float = 8.0
@@ -47,6 +48,7 @@ signal stamina_cambiada(actual: float, maxima: float)
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 @onready var malla_cuerpo: MeshInstance3D = $MallaCuerpo
 @onready var rayo_trepar: RayCast3D = $RayoTrepar
+@onready var inventario: Inventario = $Inventario
 
 var gravedad: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 var indice_arma_actual: int = 0
@@ -74,6 +76,7 @@ var en_aire: bool = false
 var altura_despegue: float = 0.0
 var stamina_actual: float = 100.0
 var stamina_agotada: bool = false
+var esta_en_inventario: bool = false
 
 func _ready() -> void:
 	_asegurar_mapeo_entradas()
@@ -85,6 +88,13 @@ func _ready() -> void:
 	stamina_actual = stamina_maxima
 
 func _input(event: InputEvent) -> void:
+	if event.is_action_pressed("inventario"):
+		_toggle_inventario()
+		return
+
+	if esta_en_inventario:
+		return
+
 	if event is InputEventMouseMotion and raton_capturado and not en_dialogo:
 		rotate_y(-event.relative.x * sensibilidad_raton)
 		pivote_camara.rotate_x(-event.relative.y * sensibilidad_raton)
@@ -112,6 +122,13 @@ func _input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_procesar_agacharse(delta)
+
+	if esta_en_inventario:
+		velocity.x = move_toward(velocity.x, 0.0, velocidad_caminar * delta * 10.0)
+		velocity.z = move_toward(velocity.z, 0.0, velocidad_caminar * delta * 10.0)
+		move_and_slide()
+		return
+
 	_procesar_trepar(delta)
 	_procesar_slide(delta)
 	_procesar_dano_caida()
@@ -235,6 +252,10 @@ func recargar() -> void:
 	municion_actualizada.emit(arma.municion_actual, arma.municion_maxima)
 
 func _comprobar_interaccion() -> void:
+	if interactuable_actual != null and not interactuable_actual.is_inside_tree():
+		interactuable_actual = null
+		prompt_interaccion_cambiado.emit("")
+
 	if rayo_interaccion.is_colliding():
 		var colision: Object = rayo_interaccion.get_collider()
 		if colision is Interactuable and colision.activo:
@@ -410,6 +431,14 @@ func _procesar_stamina(delta: float) -> void:
 
 	stamina_cambiada.emit(stamina_actual, stamina_maxima)
 
+func _toggle_inventario() -> void:
+	esta_en_inventario = not esta_en_inventario
+	inventario_abierto.emit(esta_en_inventario)
+	if esta_en_inventario:
+		capturar_raton(false)
+	else:
+		capturar_raton(true)
+
 func _asegurar_mapeo_entradas() -> void:
 	_agregar_tecla("mover_adelante", KEY_W)
 	_agregar_tecla("mover_atras", KEY_S)
@@ -425,6 +454,7 @@ func _asegurar_mapeo_entradas() -> void:
 	_agregar_tecla("trepar", KEY_G)
 	_agregar_tecla("lean_izquierda", KEY_Q)
 	_agregar_tecla("lean_derecha", KEY_E)
+	_agregar_tecla("inventario", KEY_I)
 	_agregar_raton("disparar", MOUSE_BUTTON_LEFT)
 
 func _agregar_tecla(accion: StringName, tecla: Key) -> void:

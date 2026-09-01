@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/entidades/jugador.gd" id="1_jugador"]
 [ext_resource type="Script" path="res://scripts/componentes/componente_salud.gd" id="2_salud"]
+[ext_resource type="Script" path="res://scripts/inventario/inventario.gd" id="3_inventario"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.4
@@ -61,3 +62,7 @@ mesh = SubResource("BoxMesh_arma")
 target_position = Vector3(0, 0.5, -2)
 collide_with_areas = true
 collide_with_bodies = true
+
+[node name="Inventario" type="Node" parent="."]
+script = ExtResource("3_inventario")
+capacidad = 20

@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://3y2y6cnn0wp6"]
+[gd_scene load_steps=19 format=3 uid="uid://3y2y6cnn0wp6"]
 
 [ext_resource type="Script" uid="uid://c57t3x0imqdc6" path="res://scripts/mundo/nivel_demo.gd" id="1_nivel"]
 [ext_resource type="PackedScene" path="res://scenas/entidades/jugador.tscn" id="2_jugador"]
@@ -6,7 +6,6 @@
 [ext_resource type="PackedScene" path="res://scenas/entidades/npc.tscn" id="4_npc"]
 [ext_resource type="PackedScene" path="res://scenas/interfaz/hud.tscn" id="5_hud"]
 [ext_resource type="Script" uid="uid://g0s65cmprdf6" path="res://scripts/componentes/superficie_trepable.gd" id="6_trepable"]
-[ext_resource type="PackedScene" path="res://scenas/objetos/recogible.tscn" id="7_recogible"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 sky_top_color = Color(0.35, 0.55, 0.85, 1)
@@ -160,6 +159,3 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -12)
 nombre_enemigo = "Estudiante Hostil B"
 
 [node name="HUD" parent="." instance=ExtResource("5_hud")]
-
-[node name="Botiquin1" parent="." instance=ExtResource("7_recogible")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 8)
