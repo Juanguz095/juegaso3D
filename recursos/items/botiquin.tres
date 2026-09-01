@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DatosItem" format=3]
+
+[ext_resource type="Script" path="res://scripts/inventario/datos_item.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+nombre = "Botiquín"
+descripcion = "Recupera 25 puntos de salud"
+tipo = 2
+apilable = true
+cantidad_maxima = 5
+usable = true
+equipable = false
